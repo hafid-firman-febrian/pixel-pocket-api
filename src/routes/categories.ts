@@ -2,12 +2,12 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { eq, asc } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../db";
-import { categories } from "../db/schema";
+import { db } from "../db/index.js";
+import { categories } from "../db/schema.js";
 import {
   createCategorySchema,
   updateCategorySchema,
-} from "../validators/category";
+} from "../validators/category.js";
 
 const router = new Hono();
 

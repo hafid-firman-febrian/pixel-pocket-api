@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import transactions from "./routes/transactions";
-import categories from "./routes/categories";
-import salaryPeriods from "./routes/salary-periods";
-import summary from "./routes/summary";
-import backup from "./routes/backup";
-import auth from "./routes/auth";
-import { requireGoogleAuth } from "./middleware/auth";
+import transactions from "./routes/transactions.js";
+import categories from "./routes/categories.js";
+import salaryPeriods from "./routes/salary-periods.js";
+import summary from "./routes/summary.js";
+import backup from "./routes/backup.js";
+import auth from "./routes/auth.js";
+import { requireGoogleAuth } from "./middleware/auth.js";
 
 const app = new Hono();
 

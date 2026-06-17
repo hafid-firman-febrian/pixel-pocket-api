@@ -1,5 +1,5 @@
 import { handle } from "hono/vercel";
-import app from "../src/index";
+import app from "../src/index.js";
 
 // Menggunakan Node.js runtime karena package 'googleapis' membutuhkan Node.js API
 // (tidak kompatibel dengan Edge Runtime yang hanya memiliki Web Standard API)

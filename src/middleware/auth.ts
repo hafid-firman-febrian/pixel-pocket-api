@@ -1,9 +1,9 @@
 import type { MiddlewareHandler } from "hono";
-import { getAuthConfig } from "../lib/auth-config";
+import { getAuthConfig } from "../lib/auth-config.js";
 import {
   verifyGoogleToken,
   type GoogleTokenPayload,
-} from "../lib/google-verifier";
+} from "../lib/google-verifier.js";
 
 export type AuthUser = {
   email: string;

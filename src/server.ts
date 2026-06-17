@@ -1,4 +1,4 @@
-import app from "./index";
+import app from "./index.js";
 
 // Bun membaca export default sebagai konfigurasi HTTP server bawaan
 const port = parseInt(process.env.PORT ?? "3000", 10);

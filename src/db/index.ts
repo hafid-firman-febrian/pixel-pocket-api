@@ -1,6 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 
 // neon() membuat HTTP client yang mengirim query ke Neon via HTTPS
 // Ini beda dengan koneksi PostgreSQL biasa yang pakai TCP

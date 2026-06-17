@@ -2,19 +2,19 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../db";
-import { transactions, categories, salaryPeriods } from "../db/schema";
-import { transactionQuerySchema } from "../validators/query-filters";
+import { db } from "../db/index.js";
+import { transactions, categories, salaryPeriods } from "../db/schema.js";
+import { transactionQuerySchema } from "../validators/query-filters.js";
 import {
   createTransactionSchema,
   updateTransactionSchema,
-} from "../validators/transaction";
+} from "../validators/transaction.js";
 import {
   getWeekRange,
   getMonthRange,
   getYearRange,
   type DateRange,
-} from "../lib/date-filters";
+} from "../lib/date-filters.js";
 
 const router = new Hono();
 

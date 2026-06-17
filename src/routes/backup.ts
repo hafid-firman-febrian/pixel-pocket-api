@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { desc, eq } from "drizzle-orm";
-import { db } from "../db";
-import { transactions, categories } from "../db/schema";
-import { exportTransactionsToSheet, type SheetRow } from "../lib/google-sheets";
+import { db } from "../db/index.js";
+import { transactions, categories } from "../db/schema.js";
+import { exportTransactionsToSheet, type SheetRow } from "../lib/google-sheets.js";
 
 const router = new Hono();
 

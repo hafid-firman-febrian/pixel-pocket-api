@@ -2,12 +2,12 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../db";
-import { salaryPeriods } from "../db/schema";
+import { db } from "../db/index.js";
+import { salaryPeriods } from "../db/schema.js";
 import {
   createSalaryPeriodSchema,
   updateSalaryPeriodSchema,
-} from "../validators/salary-period";
+} from "../validators/salary-period.js";
 
 const router = new Hono();
 

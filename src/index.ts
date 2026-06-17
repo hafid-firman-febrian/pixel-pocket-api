@@ -39,6 +39,7 @@ app.route("/api/transactions", transactions);
 app.route("/api/categories", categories);
 app.route("/api/salary-periods", salaryPeriods);
 app.route("/api/summary", summary);
+app.route("/api/backup", backup);
 
 app.notFound((c) => c.json({ error: "Endpoint not found" }, 404));
 app.onError((err, c) => {

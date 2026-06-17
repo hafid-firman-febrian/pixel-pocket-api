@@ -1,0 +1,315 @@
+### Pixel Pocket API — Complete Test Suite
+### Gunakan dengan VS Code Extension: REST Client
+
+@BASE_URL = http://localhost:3000
+
+# Untuk production, ganti dengan:
+# @BASE_URL = https://pixel-pocket-api-xxx.vercel.app
+
+###########################################################
+# 🏥 HEALTH CHECK
+###########################################################
+
+### Health Check
+GET {{BASE_URL}}/
+
+
+###########################################################
+# 🗂️ CATEGORIES
+###########################################################
+
+### 1. Seed kategori default (jalankan ini dulu!)
+POST {{BASE_URL}}/api/categories/seed
+
+### 2. Seed lagi (idempotent — aman, tidak buat duplikat)
+POST {{BASE_URL}}/api/categories/seed
+
+### 3. Get semua kategori
+GET {{BASE_URL}}/api/categories
+
+### 4. Get kategori by ID
+GET {{BASE_URL}}/api/categories/1
+
+### 5. Buat kategori custom
+POST {{BASE_URL}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Cicilan Rumah",
+  "color": "#FF5733",
+  "type": "expense"
+}
+
+### 6. Update kategori
+PUT {{BASE_URL}}/api/categories/16
+Content-Type: application/json
+
+{
+  "color": "#27AE60"
+}
+
+### 7. Hapus kategori (ganti ID sesuai yang dibuat)
+DELETE {{BASE_URL}}/api/categories/16
+
+### 8. Error: warna hex tidak valid
+POST {{BASE_URL}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Test Invalid",
+  "color": "merah",
+  "type": "expense"
+}
+
+### 9. Error: nama sudah ada (duplikat)
+POST {{BASE_URL}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Gaji",
+  "type": "income"
+}
+
+
+###########################################################
+# 📅 SALARY PERIODS
+###########################################################
+
+### 10. Seed salary period (gajian tgl 27, ~36 periode, idempotent)
+POST {{BASE_URL}}/api/salary-periods/seed
+
+### 11. Buat salary period dengan nominal
+POST {{BASE_URL}}/api/salary-periods
+Content-Type: application/json
+
+{
+  "name": "Gaji Juni 2026",
+  "start_date": "2026-05-27",
+  "end_date": "2026-06-26",
+  "salary_amount": 5000000
+}
+
+### 12. Buat salary period tanpa nominal
+POST {{BASE_URL}}/api/salary-periods
+Content-Type: application/json
+
+{
+  "name": "Gaji Juli 2026",
+  "start_date": "2026-06-27",
+  "end_date": "2026-07-26"
+}
+
+### 13. Get semua salary period
+GET {{BASE_URL}}/api/salary-periods
+
+### 14. Get salary period by ID
+GET {{BASE_URL}}/api/salary-periods/1
+
+### 15. Update salary period
+PUT {{BASE_URL}}/api/salary-periods/1
+Content-Type: application/json
+
+{
+  "salary_amount": 5500000
+}
+
+### 16. Hapus salary period
+DELETE {{BASE_URL}}/api/salary-periods/2
+
+### 17. Error: end_date sebelum start_date
+POST {{BASE_URL}}/api/salary-periods
+Content-Type: application/json
+
+{
+  "name": "Invalid Period",
+  "start_date": "2026-02-01",
+  "end_date": "2026-01-01"
+}
+
+
+###########################################################
+# 💰 TRANSACTIONS
+###########################################################
+
+### 18. Buat transaksi income (pastikan category_id=11 ada — Gaji)
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "2026-06-15",
+  "transaction_type": "income",
+  "amount": 5000000,
+  "category_id": 11,
+  "description": "Gaji bulan Juni 2026"
+}
+
+### 19. Buat transaksi expense
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "2026-06-16",
+  "transaction_type": "expense",
+  "amount": 75000,
+  "category_id": 1,
+  "description": "Makan siang di Warteg Barokah"
+}
+
+### 20. Buat transaksi tanpa kategori dan deskripsi
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "2026-06-17",
+  "transaction_type": "expense",
+  "amount": 50000
+}
+
+### 21. Buat beberapa transaksi untuk test chart
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "2026-06-18",
+  "transaction_type": "expense",
+  "amount": 150000,
+  "category_id": 2,
+  "description": "Grab ke kantor"
+}
+
+### 22. Get semua transaksi (tanpa filter)
+GET {{BASE_URL}}/api/transactions
+
+### 23. Get transaksi — filter minggu ini
+GET {{BASE_URL}}/api/transactions?filter=week
+
+### 24. Get transaksi — filter bulan ini
+GET {{BASE_URL}}/api/transactions?filter=month
+
+### 25. Get transaksi — filter tahun ini
+GET {{BASE_URL}}/api/transactions?filter=year
+
+### 26. Get transaksi — filter custom range
+GET {{BASE_URL}}/api/transactions?filter=custom&start_date=2026-06-01&end_date=2026-06-30
+
+### 27. Get transaksi — filter by salary period
+GET {{BASE_URL}}/api/transactions?salary_period_id=1
+
+### 28. Get transaksi — filter by kategori
+GET {{BASE_URL}}/api/transactions?filter=month&category_id=1
+
+### 29. Get transaksi — hanya expense
+GET {{BASE_URL}}/api/transactions?filter=month&transaction_type=expense
+
+### 30. Get transaksi — kombinasi filter
+GET {{BASE_URL}}/api/transactions?filter=month&transaction_type=expense&category_id=1
+
+### 31. Get transaksi — dengan pagination
+GET {{BASE_URL}}/api/transactions?filter=month&page=1&limit=5
+
+### 32. Get transaksi detail by ID
+GET {{BASE_URL}}/api/transactions/1
+
+### 33. Update transaksi
+PUT {{BASE_URL}}/api/transactions/2
+Content-Type: application/json
+
+{
+  "amount": 80000,
+  "description": "Makan siang + minuman es teh"
+}
+
+### 34. Hapus transaksi
+DELETE {{BASE_URL}}/api/transactions/3
+
+### 35. Error: nominal negatif
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "2026-06-20",
+  "transaction_type": "expense",
+  "amount": -50000
+}
+
+### 36. Error: format tanggal salah
+POST {{BASE_URL}}/api/transactions
+Content-Type: application/json
+
+{
+  "transaction_date": "20/06/2026",
+  "transaction_type": "expense",
+  "amount": 50000
+}
+
+### 37. Error: transaksi tidak ditemukan
+GET {{BASE_URL}}/api/transactions/99999
+
+
+###########################################################
+# 📊 SUMMARY & ANALYTICS
+###########################################################
+
+### 38. Summary bulan ini
+GET {{BASE_URL}}/api/summary?filter=month
+
+### 39. Summary minggu ini
+GET {{BASE_URL}}/api/summary?filter=week
+
+### 40. Summary tahun ini
+GET {{BASE_URL}}/api/summary?filter=year
+
+### 41. Summary custom range
+GET {{BASE_URL}}/api/summary?filter=custom&start_date=2026-06-01&end_date=2026-06-30
+
+### 42. Summary by salary period
+GET {{BASE_URL}}/api/summary?salary_period_id=1
+
+### 43. Summary hanya income
+GET {{BASE_URL}}/api/summary?filter=month&transaction_type=income
+
+### 44. Summary hanya expense
+GET {{BASE_URL}}/api/summary?filter=month&transaction_type=expense
+
+### 45. Summary semua (tanpa filter)
+GET {{BASE_URL}}/api/summary
+
+### 46. Summary per kategori — bulan ini
+GET {{BASE_URL}}/api/summary/by-category?filter=month
+
+### 47. Summary per kategori — hanya expense
+GET {{BASE_URL}}/api/summary/by-category?filter=month&transaction_type=expense
+
+### 48. Summary per kategori — custom range
+GET {{BASE_URL}}/api/summary/by-category?filter=custom&start_date=2026-06-01&end_date=2026-06-30
+
+### 49. Chart data — bulan ini (default)
+GET {{BASE_URL}}/api/summary/chart
+
+### 50. Chart data — minggu ini
+GET {{BASE_URL}}/api/summary/chart?filter=week
+
+### 51. Chart data — custom range
+GET {{BASE_URL}}/api/summary/chart?filter=custom&start_date=2026-06-01&end_date=2026-06-30
+
+### 52. Chart data — by salary period
+GET {{BASE_URL}}/api/summary/chart?salary_period_id=1
+
+
+###########################################################
+# 💾 BACKUP
+###########################################################
+
+### 53. Backup ke Google Sheets
+POST {{BASE_URL}}/api/backup/spreadsheet
+
+
+###########################################################
+# 🚫 ERROR CASES TAMBAHAN
+###########################################################
+
+### 54. Endpoint tidak ditemukan
+GET {{BASE_URL}}/api/tidak-ada
+
+### 55. filter=custom tanpa tanggal
+GET {{BASE_URL}}/api/transactions?filter=custom

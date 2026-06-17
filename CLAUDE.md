@@ -9,7 +9,7 @@ Panduan ini membantu Claude Code memahami proyek, konvensi, dan keputusan arsite
 | Framework | Hono |
 | Database | Neon (serverless PostgreSQL) |
 | ORM | Drizzle ORM |
-| Validasi | Zod |
+| Validasi | Zod v4 |
 | Runtime Dev | Bun |
 | Deployment | Vercel (Node.js runtime) |
 | Bahasa | TypeScript (strict mode) |
@@ -86,6 +86,7 @@ PORT=3000
 ### Tabel `categories`
 - `id`, `name` (unique), `color` (hex), `type` (income|expense|both), `createdAt`
 - Constraint `UNIQUE` pada `name` — dipakai untuk idempotency seed via `onConflictDoNothing()`
+- **Tidak ada kolom `icon`** (keputusan desain). Jangan tambahkan `icon` di schema/seed/response.
 
 ### Tabel `transactions`
 - `id`, `transactionDate` (DATE), `transactionType` (income|expense), `amount` (numeric 15,2), `categoryId` (FK → categories, onDelete: set null), `description`, `createdAt`, `updatedAt`
@@ -126,7 +127,7 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 
 const sql = neon(process.env.DATABASE_URL!);
-export const db = drizzle({ client: sql, schema });
+export const db = drizzle(sql, { schema });
 ```
 
 ### Urutan route — seed sebelum /:id
@@ -159,7 +160,7 @@ return c.json({ data: rows, count: total, meta: { page, limit, totalPages, hasNe
 return c.json({ error: 'Pesan error' }, 404)
 
 // Validation error
-return c.json({ error: 'Label error', details: result.error.flatten().fieldErrors }, 400)
+return c.json({ error: 'Label error', details: z.flattenError(result.error).fieldErrors }, 400)
 ```
 
 ### Validasi dengan Zod
@@ -169,12 +170,14 @@ Semua validator menggunakan `zValidator` dari `@hono/zod-validator`. Selalu sert
 ```typescript
 zValidator('json', schema, (result, c) => {
   if (!result.success) {
-    return c.json({ error: 'Label', details: result.error.flatten().fieldErrors }, 400)
+    return c.json({ error: 'Label', details: z.flattenError(result.error).fieldErrors }, 400)
   }
 })
 ```
 
 Query params yang datang sebagai string dikonversi otomatis dengan `z.coerce.number()`.
+
+> **Zod v4:** proyek memakai Zod v4. Gunakan `z.flattenError(result.error).fieldErrors` (bukan `result.error.flatten()` yang sudah deprecated). Untuk custom message enum/number pakai opsi `{ error: "..." }`, bukan `errorMap`/`required_error`/`invalid_type_error` ala v3.
 
 ### Cross-field validation
 

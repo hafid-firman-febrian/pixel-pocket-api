@@ -7,7 +7,7 @@
 # @BASE_URL = https://pixel-pocket-api-xxx.vercel.app
 
 # Auth: semua /api/* butuh Google ID token. Ambil token via Google Identity
-# Services (web) / Google Sign-In SDK (mobile) atau OAuth Playload, lalu isi di sini:
+# Services (web) / Google Sign-In SDK (mobile) atau OAuth Playground, lalu isi di sini:
 @TOKEN = PASTE_GOOGLE_ID_TOKEN_HERE
 
 ###########################################################

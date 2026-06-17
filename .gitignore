@@ -1,2 +1,26 @@
 # deps
 node_modules/
+
+gitignore
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment variables (JANGAN pernah commit file ini)
+.env
+.env.local
+.env.production
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

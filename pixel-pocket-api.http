@@ -6,6 +6,25 @@
 # Untuk production, ganti dengan:
 # @BASE_URL = https://pixel-pocket-api-xxx.vercel.app
 
+# Auth: semua /api/* butuh Google ID token. Ambil token via Google Identity
+# Services (web) / Google Sign-In SDK (mobile) atau OAuth Playload, lalu isi di sini:
+@TOKEN = PASTE_GOOGLE_ID_TOKEN_HERE
+
+###########################################################
+# 🔐 AUTH
+###########################################################
+
+### A1. Identitas dari token saat ini
+GET {{BASE_URL}}/api/auth/me
+Authorization: Bearer {{TOKEN}}
+
+### A2. Error: tanpa token (401)
+GET {{BASE_URL}}/api/categories
+
+### A3. Contoh request terproteksi dengan token
+GET {{BASE_URL}}/api/categories
+Authorization: Bearer {{TOKEN}}
+
 ###########################################################
 # 🏥 HEALTH CHECK
 ###########################################################

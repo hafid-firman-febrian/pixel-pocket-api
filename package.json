@@ -1,5 +1,6 @@
 {
   "name": "pixel-pocket-api",
+  "type": "module",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
     "db:push": "drizzle-kit push",

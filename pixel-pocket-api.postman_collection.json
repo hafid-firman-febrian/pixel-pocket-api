@@ -1,0 +1,220 @@
+{
+  "info": {
+    "name": "Pixel Pocket API",
+    "description": "Collection lengkap Pixel Pocket API. Set variable `base_url` dan `token` (Google ID token) di tab Variables. Auth Bearer sudah di-set di level collection sehingga semua request /api/* otomatis mengirim header Authorization.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000", "type": "string" },
+    { "key": "token", "value": "PASTE_GOOGLE_ID_TOKEN_HERE", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Auth & Health",
+      "item": [
+        {
+          "name": "Health Check (publik, no auth)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] }
+          }
+        },
+        {
+          "name": "Auth Me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Seed kategori default",
+          "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/categories/seed", "host": ["{{base_url}}"], "path": ["api", "categories", "seed"] } }
+        },
+        {
+          "name": "Get semua kategori",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] } }
+        },
+        {
+          "name": "Get kategori by ID",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/categories/1", "host": ["{{base_url}}"], "path": ["api", "categories", "1"] } }
+        },
+        {
+          "name": "Buat kategori",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Cicilan Rumah\",\n  \"color\": \"#FF5733\",\n  \"type\": \"expense\"\n}" },
+            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Update kategori",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"color\": \"#27AE60\"\n}" },
+            "url": { "raw": "{{base_url}}/api/categories/16", "host": ["{{base_url}}"], "path": ["api", "categories", "16"] }
+          }
+        },
+        {
+          "name": "Hapus kategori",
+          "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/categories/16", "host": ["{{base_url}}"], "path": ["api", "categories", "16"] } }
+        }
+      ]
+    },
+    {
+      "name": "Salary Periods",
+      "item": [
+        {
+          "name": "Seed salary period",
+          "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/salary-periods/seed", "host": ["{{base_url}}"], "path": ["api", "salary-periods", "seed"] } }
+        },
+        {
+          "name": "Buat salary period",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Gaji Juni 2026\",\n  \"start_date\": \"2026-05-27\",\n  \"end_date\": \"2026-06-26\",\n  \"salary_amount\": 5000000\n}" },
+            "url": { "raw": "{{base_url}}/api/salary-periods", "host": ["{{base_url}}"], "path": ["api", "salary-periods"] }
+          }
+        },
+        {
+          "name": "Get semua salary period",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/salary-periods", "host": ["{{base_url}}"], "path": ["api", "salary-periods"] } }
+        },
+        {
+          "name": "Get salary period by ID",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/salary-periods/1", "host": ["{{base_url}}"], "path": ["api", "salary-periods", "1"] } }
+        },
+        {
+          "name": "Update salary period",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"salary_amount\": 5500000\n}" },
+            "url": { "raw": "{{base_url}}/api/salary-periods/1", "host": ["{{base_url}}"], "path": ["api", "salary-periods", "1"] }
+          }
+        },
+        {
+          "name": "Hapus salary period",
+          "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/salary-periods/2", "host": ["{{base_url}}"], "path": ["api", "salary-periods", "2"] } }
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Buat transaksi income",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"transaction_date\": \"2026-06-15\",\n  \"transaction_type\": \"income\",\n  \"amount\": 5000000,\n  \"category_id\": 11,\n  \"description\": \"Gaji bulan Juni 2026\"\n}" },
+            "url": { "raw": "{{base_url}}/api/transactions", "host": ["{{base_url}}"], "path": ["api", "transactions"] }
+          }
+        },
+        {
+          "name": "Buat transaksi expense",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"transaction_date\": \"2026-06-16\",\n  \"transaction_type\": \"expense\",\n  \"amount\": 75000,\n  \"category_id\": 1,\n  \"description\": \"Makan siang\"\n}" },
+            "url": { "raw": "{{base_url}}/api/transactions", "host": ["{{base_url}}"], "path": ["api", "transactions"] }
+          }
+        },
+        {
+          "name": "Get semua transaksi",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/transactions", "host": ["{{base_url}}"], "path": ["api", "transactions"] } }
+        },
+        {
+          "name": "Get transaksi (filter + pagination)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/transactions?filter=month&transaction_type=expense&category_id=1&page=1&limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                { "key": "filter", "value": "month" },
+                { "key": "transaction_type", "value": "expense" },
+                { "key": "category_id", "value": "1" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get transaksi by ID",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/transactions/1", "host": ["{{base_url}}"], "path": ["api", "transactions", "1"] } }
+        },
+        {
+          "name": "Update transaksi",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 80000,\n  \"description\": \"Makan siang + es teh\"\n}" },
+            "url": { "raw": "{{base_url}}/api/transactions/2", "host": ["{{base_url}}"], "path": ["api", "transactions", "2"] }
+          }
+        },
+        {
+          "name": "Hapus transaksi",
+          "request": { "method": "DELETE", "url": { "raw": "{{base_url}}/api/transactions/3", "host": ["{{base_url}}"], "path": ["api", "transactions", "3"] } }
+        }
+      ]
+    },
+    {
+      "name": "Summary & Analytics",
+      "item": [
+        {
+          "name": "Summary total",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/summary?filter=month", "host": ["{{base_url}}"], "path": ["api", "summary"], "query": [{ "key": "filter", "value": "month" }] }
+          }
+        },
+        {
+          "name": "Summary by-category (expense)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/summary/by-category?filter=month&transaction_type=expense",
+              "host": ["{{base_url}}"],
+              "path": ["api", "summary", "by-category"],
+              "query": [
+                { "key": "filter", "value": "month" },
+                { "key": "transaction_type", "value": "expense" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Chart data",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/summary/chart?filter=month", "host": ["{{base_url}}"], "path": ["api", "summary", "chart"], "query": [{ "key": "filter", "value": "month" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Backup",
+      "item": [
+        {
+          "name": "Backup ke Google Sheets",
+          "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/backup/spreadsheet", "host": ["{{base_url}}"], "path": ["api", "backup", "spreadsheet"] } }
+        }
+      ]
+    }
+  ]
+}

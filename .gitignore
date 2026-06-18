@@ -24,3 +24,5 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+# Postman collection berisi token asli — jangan commit
+pixel-pocket-api.postman_collection.json

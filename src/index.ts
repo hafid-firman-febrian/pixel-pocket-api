@@ -7,7 +7,7 @@ import salaryPeriods from "./routes/salary-periods.js";
 import summary from "./routes/summary.js";
 import backup from "./routes/backup.js";
 import auth from "./routes/auth.js";
-import { requireGoogleAuth } from "./middleware/auth.js";
+import { requireAuth } from "./middleware/auth.js";
 
 const app = new Hono();
 
@@ -27,9 +27,10 @@ app.use(
 
 app.use("*", logger());
 
-// Semua /api/* wajib Google ID token valid + email ter-allowlist.
+// Semua /api/* wajib access token JWT valid (diterbitkan oleh /api/auth/google).
+// Endpoint publik (/api/auth/google, /api/auth/refresh, /api/auth/logout) di-bypass requireAuth.
 // Health check "/" tetap publik (di luar /api).
-app.use("/api/*", requireGoogleAuth);
+app.use("/api/*", requireAuth);
 
 // ─────────────────────────────────────────────
 // Health Check

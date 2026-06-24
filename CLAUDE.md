@@ -70,6 +70,9 @@ pixel-pocket-api/
 # Wajib
 DATABASE_URL=postgresql://...@...neon.tech/neondb?sslmode=require
 
+# Wajib untuk autentikasi JWT
+AUTH_JWT_SECRET=change-me-use-openssl-rand-hex-32
+
 # Wajib untuk fitur backup Google Sheets
 GOOGLE_SERVICE_ACCOUNT_EMAIL=...@....iam.gserviceaccount.com
 GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nABC...\n-----END PRIVATE KEY-----\n"
@@ -80,6 +83,10 @@ GOOGLE_OAUTH_CLIENT_IDS=xxx.apps.googleusercontent.com
 ALLOWED_GOOGLE_EMAILS=you@gmail.com
 ALLOWED_ORIGINS=
 
+# Token TTL (opsional, ada default)
+ACCESS_TOKEN_TTL_MIN=30        # default: 30 menit
+REFRESH_TOKEN_TTL_DAYS=30      # default: 30 hari
+
 # Dev only
 PORT=3000
 ```
@@ -88,19 +95,26 @@ PORT=3000
 
 ## Autentikasi
 
-API dilindungi **Google Auth (single-user)**. Semua `/api/*` butuh header
-`Authorization: Bearer <Google ID token>`; health check `GET /` tetap publik.
+API menggunakan **token-based auth dua-lapis**: Google ID token hanya dipakai sekali untuk login; selanjutnya semua `/api/*` dilindungi access token JWT milik kita sendiri. Health check `GET /` tetap publik.
 
-**Alur:** klien login Google → dapat ID token → kirim sebagai Bearer →
-middleware `requireGoogleAuth` ([src/middleware/auth.ts](src/middleware/auth.ts))
-memverifikasi token via `google-auth-library` lalu mencocokkan email ke allowlist.
+**Alur:**
+1. Klien login Google → dapat Google ID token.
+2. `POST /api/auth/google` — menukar Google ID token dengan `{ accessToken, refreshToken }`. Endpoint ini **publik** (bypass middleware).
+3. Klien menyimpan kedua token. Setiap request berikutnya ke `/api/*` sertakan `Authorization: Bearer <accessToken>`.
+4. Middleware `requireAuth` ([src/middleware/auth.ts](src/middleware/auth.ts)) memverifikasi JWT access token (secret: `AUTH_JWT_SECRET`); endpoint publik (`/api/auth/google`, `/api/auth/refresh`, `/api/auth/logout`) di-bypass otomatis.
+5. `POST /api/auth/refresh` — merotasi refresh token (rotasi refresh token: token lama dimatikan); returns `{ accessToken, refreshToken }` baru.
+6. `POST /api/auth/logout` — merevoke refresh token (hapus session).
+7. PIN gembok lokal di klien — bukan concern server (lihat [docs/auth-pin-mobile-flow.md](docs/auth-pin-mobile-flow.md)).
 
 - `GOOGLE_OAUTH_CLIENT_IDS` — OAuth 2.0 Client ID (audience), comma-separated. **Bukan** service account Sheets.
 - `ALLOWED_GOOGLE_EMAILS` — allowlist email (single-user), comma-separated.
 - `ALLOWED_ORIGINS` — opsional; batasi CORS. Kosong = `*`.
+- `AUTH_JWT_SECRET` — secret untuk sign/verify access token JWT. **Wajib**.
 
 Error: 401 token tidak ada/invalid; 403 email tidak diizinkan/belum verified.
-`GET /api/auth/me` mengembalikan identitas token saat ini.
+`GET /api/auth/me` mengembalikan identitas dari access token saat ini.
+
+**Catatan:** access token dari `/api/auth/refresh` tidak memuat klaim `name` (session hanya menyimpan `sub`+`email`), sehingga `GET /api/auth/me` mengembalikan `name` kosong setelah refresh — ini disengaja, bukan bug.
 
 **Migrasi multi-user nanti:** hapus allowlist → tabel `users` ber-key Google `sub`
 → kolom `user_id` di 3 tabel → filter query per `c.get("user").sub`. Identitas
@@ -121,6 +135,11 @@ Error: 401 token tidak ada/invalid; 403 email tidak diizinkan/belum verified.
 
 ### Tabel `salary_periods`
 - `id`, `name`, `startDate` (DATE), `endDate` (DATE), `salaryAmount` (numeric 15,2, nullable), `createdAt`
+
+### Tabel `sessions`
+- `id`, `userSub` (Google `sub`), `email`, `tokenHash` (SHA-256 dari refresh token, unique), `expiresAt` (timestamp), `revokedAt` (timestamp, nullable), `lastUsedAt` (timestamp, nullable), `createdAt`
+- Dipakai untuk rotasi refresh token (token lama dimatikan, bukan deteksi replay penuh). Satu row per sesi aktif.
+- Perlu `bun run db:migrate` ke Neon sebelum fitur auth token dapat digunakan di production.
 
 ---
 
@@ -279,7 +298,7 @@ export const runtime = 'nodejs' // JANGAN diubah ke 'edge'
 | `filter=custom` error | `start_date`/`end_date` tidak dikirim | Keduanya wajib ada saat `filter=custom` |
 | `date` jadi Date object | Driver salah | Pakai `neon-http`, hasilnya string `YYYY-MM-DD` |
 | TypeScript error di `process.env` | `@types/node` belum di-include | Tambah `"types": ["node"]` di `tsconfig.json` |
-| Semua `/api/*` balas 401 | Lupa header `Authorization: Bearer <token>` | Sertakan Google ID token; cek `GOOGLE_OAUTH_CLIENT_IDS`/`ALLOWED_GOOGLE_EMAILS` terisi |
+| Semua `/api/*` balas 401 | Access token tidak dikirim atau sudah kedaluwarsa | Panggil `POST /api/auth/google` terlebih dahulu untuk mendapat `accessToken`, lalu sertakan `Authorization: Bearer <accessToken>`; cek `AUTH_JWT_SECRET` terisi |
 
 ---
 
@@ -288,7 +307,10 @@ export const runtime = 'nodejs' // JANGAN diubah ke 'edge'
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/` | Health check |
-| GET | `/api/auth/me` | Identitas dari Google ID token saat ini |
+| POST | `/api/auth/google` | Tukar Google ID token → `{ accessToken, refreshToken }` |
+| POST | `/api/auth/refresh` | Rotasi refresh token → `{ accessToken, refreshToken }` baru |
+| POST | `/api/auth/logout` | Revoke refresh token (hapus session) |
+| GET | `/api/auth/me` | Identitas dari access token saat ini |
 | GET | `/api/categories` | List semua kategori |
 | GET | `/api/categories/:id` | Detail kategori |
 | POST | `/api/categories` | Buat kategori |

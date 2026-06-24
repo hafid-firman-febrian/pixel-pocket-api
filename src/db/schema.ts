@@ -55,9 +55,29 @@ export const salaryPeriods = pgTable("salary_periods", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: serial("id").primaryKey(),
+    userSub: text("user_sub").notNull(),
+    email: text("email").notNull(),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at").notNull(),
+    revokedAt: timestamp("revoked_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    lastUsedAt: timestamp("last_used_at"),
+  },
+  (table) => [
+    index("idx_sessions_token_hash").on(table.tokenHash),
+    index("idx_sessions_user_sub").on(table.userSub),
+  ],
+);
+
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type Category = typeof categories.$inferSelect;
 export type NewCategory = typeof categories.$inferInsert;
 export type SalaryPeriod = typeof salaryPeriods.$inferSelect;
 export type NewSalaryPeriod = typeof salaryPeriods.$inferInsert;
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;

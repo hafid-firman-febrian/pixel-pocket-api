@@ -1,9 +1,5 @@
 import type { MiddlewareHandler } from "hono";
-import { getAuthConfig } from "../lib/auth-config.js";
-import {
-  verifyGoogleToken,
-  type GoogleTokenPayload,
-} from "../lib/google-verifier.js";
+import { getTokenConfig, verifyAccessToken, type AccessClaims } from "../lib/tokens.js";
 
 export type AuthUser = {
   email: string;
@@ -18,19 +14,27 @@ declare module "hono" {
   }
 }
 
-type VerifyFn = (
-  idToken: string,
-  audience: string[],
-) => Promise<GoogleTokenPayload>;
+// Endpoint yang menerbitkan/menukar token tidak boleh butuh access token.
+const PUBLIC_PATHS = new Set([
+  "/api/auth/google",
+  "/api/auth/refresh",
+  "/api/auth/logout",
+]);
 
-// Factory agar fungsi verify bisa di-inject saat test (tanpa jaringan).
+type VerifyFn = (token: string) => Promise<AccessClaims>;
+
+// Factory agar fungsi verify bisa di-inject saat test (tanpa JWT nyata).
 export function createAuthMiddleware(
-  verify: VerifyFn = verifyGoogleToken,
+  verify: VerifyFn = verifyAccessToken,
 ): MiddlewareHandler {
   return async (c, next) => {
-    let config;
+    if (PUBLIC_PATHS.has(c.req.path)) {
+      await next();
+      return;
+    }
+
     try {
-      config = getAuthConfig();
+      getTokenConfig(); // pastikan AUTH_JWT_SECRET ada
     } catch (error) {
       console.error("[auth] konfigurasi tidak lengkap", error);
       return c.json({ error: "Konfigurasi autentikasi tidak lengkap" }, 500);
@@ -38,39 +42,25 @@ export function createAuthMiddleware(
 
     const header = c.req.header("Authorization");
     if (!header || !header.startsWith("Bearer ")) {
-      return c.json(
-        { error: "Token autentikasi tidak ada atau tidak valid" },
-        401,
-      );
+      return c.json({ error: "Token autentikasi tidak ada atau tidak valid" }, 401);
     }
 
     const token = header.slice("Bearer ".length).trim();
     if (!token) {
-      return c.json(
-        { error: "Token autentikasi tidak ada atau tidak valid" },
-        401,
-      );
+      return c.json({ error: "Token autentikasi tidak ada atau tidak valid" }, 401);
     }
 
-    let payload: GoogleTokenPayload;
+    let claims: AccessClaims;
     try {
-      payload = await verify(token, config.clientIds);
+      claims = await verify(token);
     } catch (error) {
-      console.error("[auth] verifikasi token gagal", error);
-      return c.json(
-        { error: "Token autentikasi tidak ada atau tidak valid" },
-        401,
-      );
+      console.error("[auth] verifikasi access token gagal", error);
+      return c.json({ error: "Token autentikasi tidak ada atau tidak valid" }, 401);
     }
 
-    const email = payload.email?.toLowerCase();
-    if (!payload.email_verified || !email || !config.allowedEmails.includes(email)) {
-      return c.json({ error: "Akses ditolak untuk akun ini" }, 403);
-    }
-
-    c.set("user", { email, sub: payload.sub, name: payload.name });
+    c.set("user", { email: claims.email, sub: claims.sub, name: claims.name });
     await next();
   };
 }
 
-export const requireGoogleAuth = createAuthMiddleware();
+export const requireAuth = createAuthMiddleware();

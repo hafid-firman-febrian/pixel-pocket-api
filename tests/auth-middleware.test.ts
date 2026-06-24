@@ -1,37 +1,29 @@
 import { test, expect, beforeAll } from "bun:test";
 import { Hono } from "hono";
 import { createAuthMiddleware } from "../src/middleware/auth";
-import type { GoogleTokenPayload } from "../src/lib/google-verifier";
+import type { AccessClaims } from "../src/lib/tokens";
 
 beforeAll(() => {
-  process.env.GOOGLE_OAUTH_CLIENT_IDS = "client.apps.googleusercontent.com";
-  process.env.ALLOWED_GOOGLE_EMAILS = "owner@example.com";
+  process.env.AUTH_JWT_SECRET = "test-secret";
 });
 
-function appWith(verify: (t: string, a: string[]) => Promise<GoogleTokenPayload>) {
+function appWith(verify: (t: string) => Promise<AccessClaims>) {
   const app = new Hono();
   app.use("/api/*", createAuthMiddleware(verify));
   app.get("/api/ping", (c) => c.json({ user: c.get("user") }));
+  app.post("/api/auth/google", (c) => c.json({ ok: true }));
   return app;
 }
 
-const ok: GoogleTokenPayload = {
-  email: "owner@example.com",
-  email_verified: true,
-  sub: "12345",
-  name: "Owner",
-};
-
-const neverCalled = async (): Promise<GoogleTokenPayload> => {
+const ok: AccessClaims = { sub: "12345", email: "owner@example.com", name: "Owner" };
+const neverCalled = async (): Promise<AccessClaims> => {
   throw new Error("verify should not be called");
 };
 
 test("401 when Authorization header is missing", async () => {
   const res = await appWith(neverCalled).request("/api/ping");
   expect(res.status).toBe(401);
-  expect(await res.json()).toEqual({
-    error: "Token autentikasi tidak ada atau tidak valid",
-  });
+  expect(await res.json()).toEqual({ error: "Token autentikasi tidak ada atau tidak valid" });
 });
 
 test("401 when header is not a Bearer token", async () => {
@@ -48,22 +40,7 @@ test("401 when token verification throws", async () => {
   expect(res.status).toBe(401);
 });
 
-test("403 when email is not on the allowlist", async () => {
-  const res = await appWith(async () => ({
-    ...ok,
-    email: "stranger@example.com",
-  })).request("/api/ping", { headers: { Authorization: "Bearer good" } });
-  expect(res.status).toBe(403);
-  expect(await res.json()).toEqual({ error: "Akses ditolak untuk akun ini" });
-});
-
-test("403 when email is not verified", async () => {
-  const res = await appWith(async () => ({ ...ok, email_verified: false }))
-    .request("/api/ping", { headers: { Authorization: "Bearer good" } });
-  expect(res.status).toBe(403);
-});
-
-test("200 and sets user when token is valid and email allowlisted", async () => {
+test("200 and sets user when access token is valid", async () => {
   const res = await appWith(async () => ok).request("/api/ping", {
     headers: { Authorization: "Bearer good" },
   });
@@ -73,8 +50,18 @@ test("200 and sets user when token is valid and email allowlisted", async () => 
   });
 });
 
-test("matches allowlist case-insensitively", async () => {
-  const res = await appWith(async () => ({ ...ok, email: "OWNER@example.com" }))
-    .request("/api/ping", { headers: { Authorization: "Bearer good" } });
+test("public auth path bypasses verification (no token needed)", async () => {
+  const res = await appWith(neverCalled).request("/api/auth/google", { method: "POST" });
   expect(res.status).toBe(200);
+  expect(await res.json()).toEqual({ ok: true });
+});
+
+test("500 when AUTH_JWT_SECRET is missing", async () => {
+  const prev = process.env.AUTH_JWT_SECRET;
+  delete process.env.AUTH_JWT_SECRET;
+  const res = await appWith(async () => ok).request("/api/ping", {
+    headers: { Authorization: "Bearer good" },
+  });
+  expect(res.status).toBe(500);
+  process.env.AUTH_JWT_SECRET = prev;
 });

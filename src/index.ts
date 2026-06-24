@@ -7,7 +7,7 @@ import salaryPeriods from "./routes/salary-periods.js";
 import summary from "./routes/summary.js";
 import backup from "./routes/backup.js";
 import auth from "./routes/auth.js";
-import { requireGoogleAuth } from "./middleware/auth.js";
+import { requireAuth } from "./middleware/auth.js";
 
 const app = new Hono();
 
@@ -29,7 +29,7 @@ app.use("*", logger());
 
 // Semua /api/* wajib Google ID token valid + email ter-allowlist.
 // Health check "/" tetap publik (di luar /api).
-app.use("/api/*", requireGoogleAuth);
+app.use("/api/*", requireAuth);
 
 // ─────────────────────────────────────────────
 // Health Check

@@ -27,7 +27,8 @@ app.use(
 
 app.use("*", logger());
 
-// Semua /api/* wajib Google ID token valid + email ter-allowlist.
+// Semua /api/* wajib access token JWT valid (diterbitkan oleh /api/auth/google).
+// Endpoint publik (/api/auth/google, /api/auth/refresh, /api/auth/logout) di-bypass requireAuth.
 // Health check "/" tetap publik (di luar /api).
 app.use("/api/*", requireAuth);
 

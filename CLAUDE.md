@@ -101,7 +101,7 @@ API menggunakan **token-based auth dua-lapis**: Google ID token hanya dipakai se
 1. Klien login Google → dapat Google ID token.
 2. `POST /api/auth/google` — menukar Google ID token dengan `{ accessToken, refreshToken }`. Endpoint ini **publik** (bypass middleware).
 3. Klien menyimpan kedua token. Setiap request berikutnya ke `/api/*` sertakan `Authorization: Bearer <accessToken>`.
-4. Middleware `requireAuth` ([src/middleware/auth.ts](src/middleware/auth.ts)) memverifikasi JWT access token (secret: `AUTH_JWT_SECRET`); endpoint publik (mis. `/api/auth/google`, `/api/auth/refresh`) di-bypass otomatis.
+4. Middleware `requireAuth` ([src/middleware/auth.ts](src/middleware/auth.ts)) memverifikasi JWT access token (secret: `AUTH_JWT_SECRET`); endpoint publik (`/api/auth/google`, `/api/auth/refresh`, `/api/auth/logout`) di-bypass otomatis.
 5. `POST /api/auth/refresh` — merotasi refresh token (rotate + reuse-detection); returns `{ accessToken, refreshToken }` baru.
 6. `POST /api/auth/logout` — merevoke refresh token (hapus session).
 7. PIN gembok lokal di klien — bukan concern server (lihat [docs/auth-pin-mobile-flow.md](docs/auth-pin-mobile-flow.md)).
@@ -135,7 +135,7 @@ Error: 401 token tidak ada/invalid; 403 email tidak diizinkan/belum verified.
 - `id`, `name`, `startDate` (DATE), `endDate` (DATE), `salaryAmount` (numeric 15,2, nullable), `createdAt`
 
 ### Tabel `sessions`
-- `id`, `userId` (Google `sub`), `tokenHash` (SHA-256 dari refresh token, unique), `expiresAt` (timestamp), `createdAt`
+- `id`, `userSub` (Google `sub`), `email`, `tokenHash` (SHA-256 dari refresh token, unique), `expiresAt` (timestamp), `revokedAt` (timestamp, nullable), `lastUsedAt` (timestamp, nullable), `createdAt`
 - Dipakai untuk rotate + reuse-detection refresh token. Satu row per sesi aktif.
 - Perlu `bun run db:migrate` ke Neon sebelum fitur auth token dapat digunakan di production.
 
@@ -296,7 +296,7 @@ export const runtime = 'nodejs' // JANGAN diubah ke 'edge'
 | `filter=custom` error | `start_date`/`end_date` tidak dikirim | Keduanya wajib ada saat `filter=custom` |
 | `date` jadi Date object | Driver salah | Pakai `neon-http`, hasilnya string `YYYY-MM-DD` |
 | TypeScript error di `process.env` | `@types/node` belum di-include | Tambah `"types": ["node"]` di `tsconfig.json` |
-| Semua `/api/*` balas 401 | Lupa header `Authorization: Bearer <token>` | Sertakan Google ID token; cek `GOOGLE_OAUTH_CLIENT_IDS`/`ALLOWED_GOOGLE_EMAILS` terisi |
+| Semua `/api/*` balas 401 | Access token tidak dikirim atau sudah kedaluwarsa | Panggil `POST /api/auth/google` terlebih dahulu untuk mendapat `accessToken`, lalu sertakan `Authorization: Bearer <accessToken>`; cek `AUTH_JWT_SECRET` terisi |
 
 ---
 

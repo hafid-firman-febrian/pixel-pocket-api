@@ -8,7 +8,7 @@ beforeAll(() => {
 });
 
 test.if(hasDb)("create → rotate → revoke against real DB", async () => {
-  const { drizzleSessionStore } = await import("../src/lib/sessions");
+  const { drizzleSessionStore } = await import("../src/lib/sessions.js");
   const sub = "test-" + Math.floor(Date.now()).toString();
   const { refreshToken } = await drizzleSessionStore.create({ userSub: sub, email: "o@e.com" });
   const rotated = await drizzleSessionStore.rotate(refreshToken);
@@ -20,5 +20,5 @@ test.if(hasDb)("create → rotate → revoke against real DB", async () => {
 
 test("module imports without DATABASE_URL side effects at type level", async () => {
   // Pastikan file ada & dapat di-resolve (tanpa konek DB).
-  expect(typeof (await import("../src/lib/sessions")).drizzleSessionStore).toBe("object");
+  expect(typeof (await import("../src/lib/sessions.js")).drizzleSessionStore).toBe("object");
 });

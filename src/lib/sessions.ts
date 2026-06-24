@@ -1,5 +1,5 @@
 // src/lib/sessions.ts
-import { eq } from "drizzle-orm";
+import { eq, and, isNull, gt } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { sessions } from "../db/schema.js";
 import { generateRefreshToken, hashToken, refreshExpiry } from "./tokens.js";
@@ -18,15 +18,20 @@ export const drizzleSessionStore: SessionStore = {
 
   async rotate(refreshToken) {
     const hash = hashToken(refreshToken);
-    const [row] = await db.select().from(sessions).where(eq(sessions.tokenHash, hash));
-    if (!row || row.revokedAt || row.expiresAt.getTime() <= Date.now()) return null;
-
     const next = generateRefreshToken();
-    await db
+    const rows = await db
       .update(sessions)
       .set({ tokenHash: hashToken(next), lastUsedAt: new Date() })
-      .where(eq(sessions.tokenHash, hash));
-
+      .where(
+        and(
+          eq(sessions.tokenHash, hash),
+          isNull(sessions.revokedAt),
+          gt(sessions.expiresAt, new Date()),
+        ),
+      )
+      .returning();
+    if (rows.length === 0) return null;
+    const row = rows[0];
     return { refreshToken: next, userSub: row.userSub, email: row.email, expiresAt: row.expiresAt };
   },
 

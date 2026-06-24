@@ -13,14 +13,20 @@ export function getTokenConfig(): TokenConfig {
     throw new Error("Konfigurasi autentikasi tidak lengkap: set AUTH_JWT_SECRET");
   }
   const accessTtlMin = Number(process.env.ACCESS_TOKEN_TTL_MIN ?? 30);
+  if (!Number.isFinite(accessTtlMin)) {
+    throw new Error("ACCESS_TOKEN_TTL_MIN tidak valid");
+  }
   const refreshTtlDays = Number(process.env.REFRESH_TOKEN_TTL_DAYS ?? 30);
+  if (!Number.isFinite(refreshTtlDays)) {
+    throw new Error("REFRESH_TOKEN_TTL_DAYS tidak valid");
+  }
   return { secret, accessTtlMin, refreshTtlDays };
 }
 
 export async function signAccessToken(claims: AccessClaims): Promise<string> {
   const { secret, accessTtlMin } = getTokenConfig();
   const exp = Math.floor(Date.now() / 1000) + accessTtlMin * 60;
-  return sign({ sub: claims.sub, email: claims.email, name: claims.name, exp }, secret);
+  return sign({ sub: claims.sub, email: claims.email, ...(claims.name != null ? { name: claims.name } : {}), exp }, secret);
 }
 
 export async function verifyAccessToken(token: string): Promise<AccessClaims> {

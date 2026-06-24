@@ -6,6 +6,7 @@ import {
   generateRefreshToken,
   hashToken,
   accessTtlSeconds,
+  getTokenConfig,
 } from "../src/lib/tokens";
 
 beforeAll(() => {
@@ -32,7 +33,7 @@ test("verify rejects a tampered token", async () => {
 test("verify rejects an expired token", async () => {
   process.env.ACCESS_TOKEN_TTL_MIN = "-60";
   const token = await signAccessToken({ sub: "123", email: "owner@example.com" });
-  await expect(verifyAccessToken(token)).rejects.toThrow();
+  await expect(verifyAccessToken(token)).rejects.toThrow(/expir/i);
 });
 
 test("accessTtlSeconds defaults to 30 minutes", () => {
@@ -49,4 +50,16 @@ test("generateRefreshToken returns unique base64url strings", () => {
   const b = generateRefreshToken();
   expect(a).not.toBe(b);
   expect(a).toMatch(/^[A-Za-z0-9_-]+$/);
+});
+
+test("getTokenConfig throws when AUTH_JWT_SECRET is missing", () => {
+  const saved = process.env.AUTH_JWT_SECRET;
+  try {
+    delete process.env.AUTH_JWT_SECRET;
+    expect(() => getTokenConfig()).toThrow(/AUTH_JWT_SECRET/);
+  } finally {
+    if (saved !== undefined) {
+      process.env.AUTH_JWT_SECRET = saved;
+    }
+  }
 });

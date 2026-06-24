@@ -16,7 +16,7 @@ export type SessionStore = {
   revoke(refreshToken: string): Promise<void>;
 };
 
-type Row = { userSub: string; email: string; expiresAt: Date; revokedAt: Date | null };
+type Row = { userSub: string; email: string; expiresAt: Date };
 
 // Implementasi in-memory untuk test. Reuse-detection sederhana: token lama
 // dihapus saat rotasi, sehingga pemakaian ulang otomatis tidak ditemukan.
@@ -27,16 +27,16 @@ export function createInMemorySessionStore(): SessionStore {
     async create({ userSub, email }) {
       const refreshToken = generateRefreshToken();
       const expiresAt = refreshExpiry();
-      rows.set(hashToken(refreshToken), { userSub, email, expiresAt, revokedAt: null });
+      rows.set(hashToken(refreshToken), { userSub, email, expiresAt });
       return { refreshToken, expiresAt };
     },
     async rotate(refreshToken) {
       const hash = hashToken(refreshToken);
       const row = rows.get(hash);
-      if (!row || row.revokedAt || row.expiresAt.getTime() <= Date.now()) return null;
+      if (!row || row.expiresAt.getTime() <= Date.now()) return null;
       rows.delete(hash);
       const next = generateRefreshToken();
-      rows.set(hashToken(next), { ...row, revokedAt: null });
+      rows.set(hashToken(next), { userSub: row.userSub, email: row.email, expiresAt: row.expiresAt });
       return { refreshToken: next, userSub: row.userSub, email: row.email, expiresAt: row.expiresAt };
     },
     async revoke(refreshToken) {

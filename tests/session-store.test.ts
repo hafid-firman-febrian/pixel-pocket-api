@@ -1,6 +1,6 @@
 // tests/session-store.test.ts
 import { test, expect, beforeAll } from "bun:test";
-import { createInMemorySessionStore } from "../src/lib/session-store";
+import { createInMemorySessionStore } from "../src/lib/session-store.js";
 
 beforeAll(() => {
   process.env.AUTH_JWT_SECRET = "test-secret";
@@ -21,6 +21,7 @@ test("rotate issues a new token and invalidates the old one", async () => {
   expect(rotated).not.toBeNull();
   expect(rotated!.refreshToken).not.toBe(refreshToken);
   expect(rotated!.userSub).toBe("1");
+  expect(rotated!.email).toBe("o@e.com");
   // token lama tidak bisa dirotasi lagi (reuse ditolak)
   expect(await store.rotate(refreshToken)).toBeNull();
 });

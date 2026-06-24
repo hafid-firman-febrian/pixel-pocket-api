@@ -58,10 +58,13 @@ test("public auth path bypasses verification (no token needed)", async () => {
 
 test("500 when AUTH_JWT_SECRET is missing", async () => {
   const prev = process.env.AUTH_JWT_SECRET;
-  delete process.env.AUTH_JWT_SECRET;
-  const res = await appWith(async () => ok).request("/api/ping", {
-    headers: { Authorization: "Bearer good" },
-  });
-  expect(res.status).toBe(500);
-  process.env.AUTH_JWT_SECRET = prev;
+  try {
+    delete process.env.AUTH_JWT_SECRET;
+    const res = await appWith(async () => ok).request("/api/ping", {
+      headers: { Authorization: "Bearer good" },
+    });
+    expect(res.status).toBe(500);
+  } finally {
+    process.env.AUTH_JWT_SECRET = prev;
+  }
 });

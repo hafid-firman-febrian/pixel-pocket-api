@@ -102,7 +102,7 @@ API menggunakan **token-based auth dua-lapis**: Google ID token hanya dipakai se
 2. `POST /api/auth/google` — menukar Google ID token dengan `{ accessToken, refreshToken }`. Endpoint ini **publik** (bypass middleware).
 3. Klien menyimpan kedua token. Setiap request berikutnya ke `/api/*` sertakan `Authorization: Bearer <accessToken>`.
 4. Middleware `requireAuth` ([src/middleware/auth.ts](src/middleware/auth.ts)) memverifikasi JWT access token (secret: `AUTH_JWT_SECRET`); endpoint publik (`/api/auth/google`, `/api/auth/refresh`, `/api/auth/logout`) di-bypass otomatis.
-5. `POST /api/auth/refresh` — merotasi refresh token (rotate + reuse-detection); returns `{ accessToken, refreshToken }` baru.
+5. `POST /api/auth/refresh` — merotasi refresh token (rotasi refresh token: token lama dimatikan); returns `{ accessToken, refreshToken }` baru.
 6. `POST /api/auth/logout` — merevoke refresh token (hapus session).
 7. PIN gembok lokal di klien — bukan concern server (lihat [docs/auth-pin-mobile-flow.md](docs/auth-pin-mobile-flow.md)).
 
@@ -113,6 +113,8 @@ API menggunakan **token-based auth dua-lapis**: Google ID token hanya dipakai se
 
 Error: 401 token tidak ada/invalid; 403 email tidak diizinkan/belum verified.
 `GET /api/auth/me` mengembalikan identitas dari access token saat ini.
+
+**Catatan:** access token dari `/api/auth/refresh` tidak memuat klaim `name` (session hanya menyimpan `sub`+`email`), sehingga `GET /api/auth/me` mengembalikan `name` kosong setelah refresh — ini disengaja, bukan bug.
 
 **Migrasi multi-user nanti:** hapus allowlist → tabel `users` ber-key Google `sub`
 → kolom `user_id` di 3 tabel → filter query per `c.get("user").sub`. Identitas
@@ -136,7 +138,7 @@ Error: 401 token tidak ada/invalid; 403 email tidak diizinkan/belum verified.
 
 ### Tabel `sessions`
 - `id`, `userSub` (Google `sub`), `email`, `tokenHash` (SHA-256 dari refresh token, unique), `expiresAt` (timestamp), `revokedAt` (timestamp, nullable), `lastUsedAt` (timestamp, nullable), `createdAt`
-- Dipakai untuk rotate + reuse-detection refresh token. Satu row per sesi aktif.
+- Dipakai untuk rotasi refresh token (token lama dimatikan, bukan deteksi replay penuh). Satu row per sesi aktif.
 - Perlu `bun run db:migrate` ke Neon sebelum fitur auth token dapat digunakan di production.
 
 ---

@@ -91,6 +91,17 @@ export function createAuthRoutes(deps: Deps = {}) {
       if (!rotated) {
         return c.json({ error: "Sesi tidak valid, silakan login ulang" }, 401);
       }
+      let config;
+      try {
+        config = getAuthConfig();
+      } catch (error) {
+        console.error("[auth] konfigurasi tidak lengkap", error);
+        return c.json({ error: "Konfigurasi autentikasi tidak lengkap" }, 500);
+      }
+      if (!config.allowedEmails.includes(rotated.email.toLowerCase())) {
+        await sessionStore.revoke(rotated.refreshToken);
+        return c.json({ error: "Akses ditolak untuk akun ini" }, 403);
+      }
       const accessToken = await signAccessToken({ sub: rotated.userSub, email: rotated.email });
       return c.json({
         data: { accessToken, refreshToken: rotated.refreshToken, expiresIn: accessTtlSeconds() },

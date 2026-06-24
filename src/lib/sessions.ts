@@ -5,9 +5,9 @@ import { sessions } from "../db/schema.js";
 import { generateRefreshToken, hashToken, refreshExpiry } from "./tokens.js";
 import type { SessionStore } from "./session-store.js";
 
-// Implementasi produksi: simpan hanya hash refresh token. Rotasi memperbarui
-// baris yang sama (token lama otomatis tidak ditemukan = reuse ditolak),
-// expiry absolut dipertahankan dari saat login.
+// Implementasi produksi: simpan hanya hash refresh token.
+// Rotasi atomik: token lama otomatis tak cocok lagi setelah tokenHash diganti (bukan deteksi replay penuh).
+// Expiry absolut dipertahankan dari saat login.
 export const drizzleSessionStore: SessionStore = {
   async create({ userSub, email }) {
     const refreshToken = generateRefreshToken();

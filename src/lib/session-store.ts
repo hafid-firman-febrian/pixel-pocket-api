@@ -18,8 +18,8 @@ export type SessionStore = {
 
 type Row = { userSub: string; email: string; expiresAt: Date };
 
-// Implementasi in-memory untuk test. Reuse-detection sederhana: token lama
-// dihapus saat rotasi, sehingga pemakaian ulang otomatis tidak ditemukan.
+// Implementasi in-memory untuk test.
+// Rotasi: token lama dihapus sehingga tidak bisa dipakai lagi (bukan deteksi replay penuh).
 export function createInMemorySessionStore(): SessionStore {
   const rows = new Map<string, Row>(); // key = hash(refreshToken)
 

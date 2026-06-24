@@ -62,6 +62,21 @@ test("POST /refresh rotates a valid refresh token", async () => {
   const body = await res.json();
   expect(body.data.accessToken).toBeTruthy();
   expect(body.data.refreshToken).not.toBe(login.data.refreshToken);
+  expect(body.data.expiresIn).toBe(1800);
+});
+
+test("POST /refresh returns 403 when the email was removed from the allowlist", async () => {
+  const a = app(async () => okPayload);
+  const login = await (await post(a, "/google", { idToken: "x" })).json();
+  const { refreshToken } = login.data;
+  const prev = process.env.ALLOWED_GOOGLE_EMAILS;
+  try {
+    process.env.ALLOWED_GOOGLE_EMAILS = "someone-else@example.com";
+    const res = await post(a, "/refresh", { refreshToken });
+    expect(res.status).toBe(403);
+  } finally {
+    process.env.ALLOWED_GOOGLE_EMAILS = prev;
+  }
 });
 
 test("POST /refresh returns 401 for an invalid refresh token", async () => {

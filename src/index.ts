@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { sql } from "drizzle-orm";
+import { db } from "./db/index.js";
 import transactions from "./routes/transactions.js";
 import categories from "./routes/categories.js";
 import salaryPeriods from "./routes/salary-periods.js";
@@ -43,6 +45,27 @@ app.get("/", (c) =>
     timestamp: new Date().toISOString(),
   }),
 );
+
+// DIAGNOSTIK: ping koneksi DB (publik, di luar /api/* jadi tanpa auth).
+// SELECT 1 ke Neon dengan timeout 8 dtk supaya tidak ikut hang 300 dtk.
+app.get("/healthz/db", async (c) => {
+  const started = Date.now();
+  try {
+    await Promise.race([
+      db.execute(sql`select 1`),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("DB timeout 8000ms")), 8000),
+      ),
+    ]);
+    return c.json({ db: "ok", latencyMs: Date.now() - started });
+  } catch (error) {
+    console.error("[healthz/db] gagal", error);
+    return c.json(
+      { db: "error", latencyMs: Date.now() - started, message: String(error) },
+      500,
+    );
+  }
+});
 
 // ─────────────────────────────────────────────
 // Routes

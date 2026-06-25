@@ -20,6 +20,17 @@ type Deps = {
   sessionStore?: SessionStore;
 };
 
+// DIAGNOSTIK SEMENTARA: batasi tiap langkah agar hang tak berkepanjangan dan
+// log timing-nya, supaya ketahuan langkah mana yang macet di Vercel.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout ${ms}ms pada langkah: ${label}`)), ms),
+    ),
+  ]);
+}
+
 export function createAuthRoutes(deps: Deps = {}) {
   const verifyGoogle = deps.verifyGoogle ?? verifyGoogleToken;
   const sessionStore = deps.sessionStore ?? drizzleSessionStore;
@@ -49,10 +60,13 @@ export function createAuthRoutes(deps: Deps = {}) {
 
       let payload: GoogleTokenPayload;
       try {
-        payload = await verifyGoogle(idToken, config.clientIds);
+        console.log("[auth] mulai verifikasi Google token");
+        const t0 = Date.now();
+        payload = await withTimeout(verifyGoogle(idToken, config.clientIds), 8000, "verifyGoogle");
+        console.log(`[auth] verifikasi Google token OK dalam ${Date.now() - t0}ms`);
       } catch (error) {
-        console.error("[auth] verifikasi Google token gagal", error);
-        return c.json({ error: "Token Google tidak valid" }, 401);
+        console.error("[auth] verifikasi Google token gagal/timeout", error);
+        return c.json({ error: "Token Google tidak valid atau verifikasi timeout" }, 504);
       }
 
       const email = payload.email?.toLowerCase();
@@ -60,7 +74,20 @@ export function createAuthRoutes(deps: Deps = {}) {
         return c.json({ error: "Akses ditolak untuk akun ini" }, 403);
       }
 
-      const { refreshToken } = await sessionStore.create({ userSub: payload.sub, email });
+      let refreshToken: string;
+      try {
+        console.log("[auth] mulai simpan sesi (DB insert)");
+        const t1 = Date.now();
+        ({ refreshToken } = await withTimeout(
+          sessionStore.create({ userSub: payload.sub, email }),
+          8000,
+          "sessionStore.create",
+        ));
+        console.log(`[auth] simpan sesi OK dalam ${Date.now() - t1}ms`);
+      } catch (error) {
+        console.error("[auth] simpan sesi gagal/timeout (DB)", error);
+        return c.json({ error: "Gagal menyimpan sesi (DB timeout)" }, 504);
+      }
       const accessToken = await signAccessToken({ sub: payload.sub, email, name: payload.name });
 
       return c.json({

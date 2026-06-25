@@ -26,3 +26,5 @@ Thumbs.db
 npm-debug.log*
 # Postman collection berisi token asli — jangan commit
 pixel-pocket-api.postman_collection.json
+.vercel
+.env*

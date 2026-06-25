@@ -46,8 +46,8 @@ app.get("/", (c) =>
   }),
 );
 
-// DIAGNOSTIK: ping koneksi DB (publik, di luar /api/* jadi tanpa auth).
-// SELECT 1 ke Neon dengan timeout 8 dtk supaya tidak ikut hang 300 dtk.
+// Health check koneksi DB (publik, di luar /api/* jadi tanpa auth).
+// SELECT 1 ke Neon dengan timeout 8 dtk agar tidak menggantung bila DB tak responsif.
 app.get("/healthz/db", async (c) => {
   const started = Date.now();
   try {

@@ -1,4 +1,4 @@
-import { handle } from "@hono/node-server/vercel";
+import { handle } from "hono/vercel";
 import app from "../src/index.js";
 
 // Menggunakan Node.js runtime karena package 'googleapis' membutuhkan Node.js API

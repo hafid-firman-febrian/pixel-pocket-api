@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { transactions, categories } from "../db/schema.js";
 import { exportTransactionsToSheet, type SheetRow } from "./google-sheets.js";
@@ -20,7 +20,8 @@ export async function fetchTransactionRows(): Promise<SheetRow[]> {
     })
     .from(transactions)
     .leftJoin(categories, eq(transactions.categoryId, categories.id))
-    .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt));
+    // Terlama di atas, terbaru di bawah (gaya buku kas — data baru menumpuk ke bawah)
+    .orderBy(asc(transactions.transactionDate), asc(transactions.createdAt));
 
   return rows.map((t) => ({
     id: t.id,

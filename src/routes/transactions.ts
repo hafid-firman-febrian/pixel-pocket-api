@@ -15,6 +15,8 @@ import {
   getYearRange,
   type DateRange,
 } from "../lib/date-filters.js";
+import { syncTransactionsToSheet } from "../lib/sheet-sync.js";
+import { scheduleBackgroundSync } from "../lib/background.js";
 
 const router = new Hono();
 
@@ -251,6 +253,9 @@ router.post(
         })
         .returning();
 
+      // Sinkronkan ke Google Sheets di latar (best-effort, tak menahan response)
+      scheduleBackgroundSync(syncTransactionsToSheet());
+
       return c.json(
         { data: { ...created, amount: parseFloat(created.amount) } },
         201,
@@ -330,6 +335,9 @@ router.put(
         .where(eq(transactions.id, id))
         .returning();
 
+      // Sinkronkan ke Google Sheets di latar (best-effort, tak menahan response)
+      scheduleBackgroundSync(syncTransactionsToSheet());
+
       return c.json({
         data: { ...updated, amount: parseFloat(updated.amount) },
       });
@@ -359,6 +367,9 @@ router.delete("/:id", async (c) => {
     if (!deleted) {
       return c.json({ error: "Transaksi tidak ditemukan" }, 404);
     }
+
+    // Sinkronkan ke Google Sheets di latar (best-effort, tak menahan response)
+    scheduleBackgroundSync(syncTransactionsToSheet());
 
     return c.json({
       data: { message: "Transaksi berhasil dihapus", id: deleted.id },

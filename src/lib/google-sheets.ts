@@ -1,12 +1,30 @@
 import { google } from "googleapis";
 
+/**
+ * Normalisasi private key dari env agar selalu jadi PEM valid.
+ *
+ * Penyebab umum ERR_OSSL_UNSUPPORTED (DECODER routines::unsupported) di Vercel:
+ * - value dibungkus tanda kutip yang ikut tersimpan
+ * - newline tersimpan sebagai literal `\n` (perlu diubah ke newline asli)
+ * - ada carriage return `\r` dari copy-paste (OpenSSL 3 strict)
+ */
+function normalizePrivateKey(raw: string): string {
+  let key = raw.trim();
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1); // buang kutip pembungkus
+  }
+  return key.replace(/\\n/g, "\n").replace(/\r/g, "");
+}
+
 function createAuthClient() {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
 
-  // Konversi \n literal ke newline sesungguhnya
-  // Ini diperlukan karena .env menyimpan newline sebagai literal \n
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const rawKey = process.env.GOOGLE_PRIVATE_KEY;
+  const privateKey = rawKey ? normalizePrivateKey(rawKey) : undefined;
 
   if (!email || !privateKey || !spreadsheetId) {
     throw new Error(
